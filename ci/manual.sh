@@ -26,6 +26,12 @@ function retrieve_latest_ocp43 {
 
 function ipmi_shutdown {
     echo 2. use ipmi to make sure servers are down
+    set +e
+    ipmitool -I lanplus -H 10.19.232.3 -U root -P calvin chassis power off
+    ipmitool -I lanplus -H 10.19.232.4 -U root -P calvin chassis power off
+    ipmitool -I lanplus -H 10.19.232.5 -U root -P calvin chassis power off
+    set -e
+}
 }
 
 function provision_cluster {
