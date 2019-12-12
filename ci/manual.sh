@@ -7,6 +7,21 @@ echo pull secert file: ${PULL_SECRET_FILE}
 
 function retrieve_latest_ocp43 {
     echo 1. retrieving latest ocp43 binaries
+    VERSION=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp-dev-preview/latest-4.3/release.txt | grep 'Name:' | awk -F: '{print $2}' | xargs)
+    RELEASE_IMAGE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp-dev-preview/latest-4.3/release.txt | grep 'Pull From: quay.io' | awk -F ' ' '{print $3}' | xargs)
+
+    cmd=openshift-baremetal-install
+    extract_dir=$(pwd)
+
+    curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp-dev-preview/latest-4.3/openshift-client-linux-$VERSION.tar.gz | tar zxvf - oc
+
+    ./oc adm release extract --registry-config "${PULL_SECRET_FILE}" --command=$cmd --to "${extract_dir}" ${RELEASE_IMAGE}
+
+    #sudo cp openshift-baremetal-install /usr/local/bin/openshift-baremetal-install
+
+    # print versions
+    ./oc version
+    ./openshift-baremetal-install version
 }
 
 function ipmi_shutdown {
@@ -28,6 +43,8 @@ function collect_results {
 
 function teardown {
     echo 6. tear down the cluster to make way for a new run
+    rm oc
+    rm openshift-baremetal-install
 }
 
 retrieve_latest_ocp43
