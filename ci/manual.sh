@@ -1,4 +1,9 @@
-#!/bin/bash
+#!/bin/bash -e
+
+if [ -z ${PULL_SECRET_FILE+x} ]; then
+    PULL_SECRET_FILE=`pwd`/pull-secert.txt
+fi
+echo pull secert file: ${PULL_SECRET_FILE}
 
 function retrieve_latest_ocp43 {
     echo 1. retrieving latest ocp43 binaries
