@@ -1,0 +1,48 @@
+apiVersion: v1
+baseDomain: kni.lab.eng.bos.redhat.com
+metadata:
+  name: fci1
+networking:
+  machineCIDR: 10.19.232.128/25
+compute:
+- name: worker
+  replicas: 2
+controlPlane:
+  name: master
+  replicas: 1
+  platform:
+    baremetal: {}
+platform:
+  baremetal:
+    apiVIP: 10.19.232.133
+    ingressVIP: 10.19.232.135
+    dnsVIP: 10.19.232.134
+    provisioningBridge: provisioning
+    externalBridge: baremetal
+    hosts:
+      - name: openshift-master-0
+        role: master
+        bmc:
+          address: ipmi://10.19.232.3
+          username: ${IPMI_USER}
+          password: ${IPMI_PASSWORD}
+        bootMACAddress: 98:03:9b:87:0b:5e
+        hardwareProfile: default
+      - name: openshift-master-1
+        role: worker
+        bmc:
+          address: ipmi://10.19.232.4
+          username: ${IPMI_USER}
+          password: ${IPMI_PASSWORD}
+        bootMACAddress: 98:03:9b:8e:8a:04
+        hardwareProfile: default
+      - name: openshift-master-2
+        role: worker
+        bmc:
+          address: ipmi://10.19.232.5
+          username: ${IPMI_USER}
+          password: ${IPMI_PASSWORD}
+        bootMACAddress: 98:03:9b:8e:89:ec
+        hardwareProfile: default
+sshKey: ${SSH_KEY}
+pullSecret: '${PULL_SECRET}'

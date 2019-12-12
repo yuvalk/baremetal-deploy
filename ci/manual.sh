@@ -32,11 +32,34 @@ function ipmi_shutdown {
     ipmitool -I lanplus -H 10.19.232.5 -U root -P calvin chassis power off
     set -e
 }
+
+function prepare_config {
+    echo "3.1 prepare install-config.yaml"
+    echo "    mainly by appending ssh-key and pull secret"
+    echo "    the pull secret need also add kni registry"
+
+    cp ../install-config.yaml.template install-config.yaml
+    
+    sed -i -e 's/${IPMI_USER}/'"${IPMI_USER}"'/g' install-config.yaml
+    sed -i -e 's/${IPMI_PASSWORD}/'"${IPMI_PASSWORD}"'/g' install-config.yaml
+
+    sed -i -e 's#${SSH_KEY}#'"$(cat ~/.ssh/id_rsa.pub | tr -d '\n')"'#g' install-config.yaml
+
+    PULL_SECRET=`jq --argjson registry "$(cat ${KNI_SECRET_FILE} | jq '.')" '.auths += $registry' ${PULL_SECRET_FILE} | tr -d '\n'`
+    sed -i -e 's/${PULL_SECRET}/'"$PULL_SECRET"'/g' install-config.yaml
 }
 
 function provision_cluster {
     echo "3. do the heavy lifting of bringing the cluster up"
     echo "   this include the needed metal configmap"
+    prepare_config
+
+    mkdir testcluster
+    cp install-config.yaml testcluster/
+    ./openshift-baremetal-install --dir=testcluster create manifests
+    cp install-config.yaml testcluster/
+    cp ../metal3-config.yaml testcluster/openshift/99_metal3-config.yaml
+    ./openshift-baremetal-install --dir=testcluster --log-level debug create cluster
 }
 
 function run_tests {
@@ -49,13 +72,21 @@ function collect_results {
 
 function teardown {
     echo 6. tear down the cluster to make way for a new run
+    #ipmi_shutdown
     rm oc
     rm openshift-baremetal-install
+
+    cd ..
+    rm -fr discardable_run
 }
+
+mkdir discardable_run
+cd discardable_run
 
 retrieve_latest_ocp43
 ipmi_shutdown
 provision_cluster
 run_tests
 collect_results
-teardown
+
+#teardown
