@@ -35,7 +35,7 @@ platform:
           username: ${IPMI_USER}
           password: ${IPMI_PASSWORD}
         bootMACAddress: 98:03:9b:8e:8a:04
-        hardwareProfile: default
+        hardwareProfile: unknown
       - name: openshift-master-2
         role: worker
         bmc:
@@ -43,6 +43,6 @@ platform:
           username: ${IPMI_USER}
           password: ${IPMI_PASSWORD}
         bootMACAddress: 98:03:9b:8e:89:ec
-        hardwareProfile: default
+        hardwareProfile: unknown
 sshKey: ${SSH_KEY}
 pullSecret: '${PULL_SECRET}'
