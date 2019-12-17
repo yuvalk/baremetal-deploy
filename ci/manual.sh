@@ -58,7 +58,14 @@ function provision_cluster {
     cp install-config.yaml testcluster/
     ./openshift-baremetal-install --dir=testcluster create manifests
     cp install-config.yaml testcluster/
-    cp ../metal3-config.yaml testcluster/openshift/99_metal3-config.yaml
+
+    cp ../metal3-config.yaml metal3-config.yaml.sample
+    export COMMIT_ID=$(./openshift-baremetal-install version | grep '^built from commit' | awk '{print $4}')
+    export RHCOS_URI=$(curl -s -S https://raw.githubusercontent.com/openshift/installer/$COMMIT_ID/data/data/rhcos.json | jq .images.openstack.path | sed 's/"//g')
+    export RHCOS_PATH=$(curl -s -S https://raw.githubusercontent.com/openshift/installer/$COMMIT_ID/data/data/rhcos.json | jq .baseURI | sed 's/"//g')
+    envsubst < metal3-config.yaml.sample > metal3-config.yaml    
+    mv metal3-config.yaml testcluster/openshift/99_metal3-config.yaml
+
     ./openshift-baremetal-install --dir=testcluster --log-level debug create cluster
 }
 
