@@ -71,6 +71,13 @@ function provision_cluster {
 
 function run_tests {
     echo 4. clone the repo and run the tests
+
+    # label workers
+    ./oc label --overwrite node/master-1.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
+    ./oc label --overwrite node/master-2.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
+
+
+
 }
 
 function collect_results {
