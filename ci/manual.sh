@@ -5,15 +5,20 @@ if [ -z ${PULL_SECRET_FILE+x} ]; then
 fi
 echo pull secert file: ${PULL_SECRET_FILE}
 
-function retrieve_latest_ocp43 {
-    echo 1. retrieving latest ocp43 binaries
-    VERSION=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp-dev-preview/latest-4.3/release.txt | grep 'Name:' | awk -F: '{print $2}' | xargs)
-    RELEASE_IMAGE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp-dev-preview/latest-4.3/release.txt | grep 'Pull From: quay.io' | awk -F ' ' '{print $3}' | xargs)
+if [ -z ${OCP_RELEASE} ]; then
+    OCP_RELEASE=latest-4.3
+fi
+echo installing ocp-dev-preview ${OCP_RELEASE}
+
+function retrieve_ocp43 {
+    echo 1. retrieving ocp binaries from ${OCP_RELEASE}
+    VERSION=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp-dev-preview/${OCP_RELEASE}/release.txt | grep 'Name:' | awk -F: '{print $2}' | xargs)
+    RELEASE_IMAGE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp-dev-preview/${OCP_RELEASE}/release.txt | grep 'Pull From: quay.io' | awk -F ' ' '{print $3}' | xargs)
 
     cmd=openshift-baremetal-install
     extract_dir=$(pwd)
 
-    curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp-dev-preview/latest-4.3/openshift-client-linux-$VERSION.tar.gz | tar zxvf - oc
+    curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp-dev-preview/${OCP_RELEASE}/openshift-client-linux-$VERSION.tar.gz | tar zxvf - oc
 
     ./oc adm release extract --registry-config "${PULL_SECRET_FILE}" --command=$cmd --to "${extract_dir}" ${RELEASE_IMAGE}
 
@@ -97,7 +102,7 @@ function teardown {
 mkdir discardable_run
 cd discardable_run
 
-retrieve_latest_ocp43
+retrieve_ocp43
 ipmi_shutdown
 provision_cluster
 run_tests
