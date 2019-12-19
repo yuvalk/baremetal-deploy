@@ -5,7 +5,12 @@ if [ -z ${PULL_SECRET_FILE+x} ]; then
 fi
 echo pull secert file: ${PULL_SECRET_FILE}
 
-if [ -z ${OCP_RELEASE} ]; then
+if [ -z ${KNI_SECRET_FILE+x} ]; then
+    KNI_SECRET_FILE=`pwd`/kni-secret.txt
+fi
+echo kni secret file: S{KNI_SECRET_FILE}
+
+if [ -z ${OCP_RELEASE+x} ]; then
     OCP_RELEASE=latest-4.3
 fi
 echo installing ocp-dev-preview ${OCP_RELEASE}
@@ -32,9 +37,10 @@ function retrieve_ocp43 {
 function ipmi_shutdown {
     echo 2. use ipmi to make sure servers are down
     set +e
-    ipmitool -I lanplus -H 10.19.232.3 -U root -P calvin chassis power off
-    ipmitool -I lanplus -H 10.19.232.4 -U root -P calvin chassis power off
-    ipmitool -I lanplus -H 10.19.232.5 -U root -P calvin chassis power off
+    for host_ip in ${IPMI_IPS[@]}; do
+        ipmitool -I lanplus -H ${host_ip} -U root -P calvin chassis power off &
+    done
+    wait
     set -e
 }
 
@@ -43,15 +49,14 @@ function prepare_config {
     echo "    mainly by appending ssh-key and pull secret"
     echo "    the pull secret need also add kni registry"
 
-    cp ../install-config.yaml.template install-config.yaml
-    
-    sed -i -e 's/${IPMI_USER}/'"${IPMI_USER}"'/g' install-config.yaml
-    sed -i -e 's/${IPMI_PASSWORD}/'"${IPMI_PASSWORD}"'/g' install-config.yaml
+    export PULL_SECRET=`jq --argjson registry "$(cat ${KNI_SECRET_FILE} | jq '.')" '.auths += $registry' ${PULL_SECRET_FILE} | tr -d '\n'`
+    envsubst < ../install-config.yaml.template > install-config.yaml
 
-    sed -i -e 's#${SSH_KEY}#'"$(cat ~/.ssh/id_rsa.pub | tr -d '\n')"'#g' install-config.yaml
-
-    PULL_SECRET=`jq --argjson registry "$(cat ${KNI_SECRET_FILE} | jq '.')" '.auths += $registry' ${PULL_SECRET_FILE} | tr -d '\n'`
-    sed -i -e 's/${PULL_SECRET}/'"$PULL_SECRET"'/g' install-config.yaml
+    cp ../metal3-config.yaml metal3-config.yaml.sample
+    export COMMIT_ID=$(./openshift-baremetal-install version | grep '^built from commit' | awk '{print $4}')
+    export RHCOS_URI=$(curl -s -S https://raw.githubusercontent.com/openshift/installer/$COMMIT_ID/data/data/rhcos.json | jq .images.openstack.path | sed 's/"//g')
+    export RHCOS_PATH=$(curl -s -S https://raw.githubusercontent.com/openshift/installer/$COMMIT_ID/data/data/rhcos.json | jq .baseURI | sed 's/"//g')
+    envsubst < metal3-config.yaml.sample > metal3-config.yaml
 }
 
 function provision_cluster {
@@ -64,11 +69,6 @@ function provision_cluster {
     ./openshift-baremetal-install --dir=testcluster create manifests
     cp install-config.yaml testcluster/
 
-    cp ../metal3-config.yaml metal3-config.yaml.sample
-    export COMMIT_ID=$(./openshift-baremetal-install version | grep '^built from commit' | awk '{print $4}')
-    export RHCOS_URI=$(curl -s -S https://raw.githubusercontent.com/openshift/installer/$COMMIT_ID/data/data/rhcos.json | jq .images.openstack.path | sed 's/"//g')
-    export RHCOS_PATH=$(curl -s -S https://raw.githubusercontent.com/openshift/installer/$COMMIT_ID/data/data/rhcos.json | jq .baseURI | sed 's/"//g')
-    envsubst < metal3-config.yaml.sample > metal3-config.yaml    
     mv metal3-config.yaml testcluster/openshift/99_metal3-config.yaml
 
     # set +e for testing purposes, at the moment, installer quite due to timeout but the installation proceed and finish.. need to find what to wait for
@@ -81,11 +81,8 @@ function run_tests {
     echo 4. clone the repo and run the tests
 
     # label workers
-    ./oc label --overwrite node/master-1.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
-    ./oc label --overwrite node/master-2.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
-
-
-
+    ./oc label node/master-1.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
+    ./oc label node/master-2.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
 }
 
 function collect_results {
@@ -102,6 +99,7 @@ function teardown {
     rm -fr discardable_run
 }
 
+source env.sh
 cd "$(dirname "$0")"
 mkdir discardable_run
 cd discardable_run

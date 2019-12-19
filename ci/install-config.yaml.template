@@ -1,9 +1,9 @@
 apiVersion: v1
-baseDomain: kni.lab.eng.bos.redhat.com
+baseDomain: ${BASE_DOMAIN}
 metadata:
-  name: fci1
+  name: ${CLUSTER_NAME}
 networking:
-  machineCIDR: 10.19.232.128/25
+  machineCIDR: ${MACHINE_CIDR}
 compute:
 - name: worker
   replicas: 2
@@ -14,35 +14,35 @@ controlPlane:
     baremetal: {}
 platform:
   baremetal:
-    apiVIP: 10.19.232.133
-    ingressVIP: 10.19.232.135
-    dnsVIP: 10.19.232.134
-    provisioningBridge: provisioning
-    externalBridge: baremetal
+    apiVIP: ${API_VIP}
+    ingressVIP: ${INGRESS_VIP}
+    dnsVIP: ${DNS_VIP}
+    provisioningBridge: ${PROVISIONING_BRIDGE}
+    externalBridge: ${EXTERNAL_BRIDGE}
     hosts:
       - name: openshift-master-0
         role: master
         bmc:
-          address: ipmi://10.19.232.3
+          address: ipmi://${MASTER_0_IPMI}
           username: ${IPMI_USER}
           password: ${IPMI_PASSWORD}
-        bootMACAddress: 98:03:9b:87:0b:5e
+        bootMACAddress: ${MASTER_0_MAC}
         hardwareProfile: default
-      - name: openshift-master-1
+      - name: openshift-worker-0
         role: worker
         bmc:
-          address: ipmi://10.19.232.4
+          address: ipmi://${WORKER_0_IPMI}
           username: ${IPMI_USER}
           password: ${IPMI_PASSWORD}
-        bootMACAddress: 98:03:9b:8e:8a:04
+        bootMACAddress: ${WORKER_0_MAC}
         hardwareProfile: unknown
-      - name: openshift-master-2
+      - name: openshift-worker-1
         role: worker
         bmc:
-          address: ipmi://10.19.232.5
+          address: ipmi://${WORKER_1_IPMI}
           username: ${IPMI_USER}
           password: ${IPMI_PASSWORD}
-        bootMACAddress: 98:03:9b:8e:89:ec
+        bootMACAddress: ${WORKER_1_MAC}
         hardwareProfile: unknown
 sshKey: ${SSH_KEY}
 pullSecret: '${PULL_SECRET}'

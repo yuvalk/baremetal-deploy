@@ -4,7 +4,7 @@ metadata:
   name: metal3-config
   namespace: openshift-machine-api
 data:
-  cache_url: http://10.19.232.132/images
+  cache_url: http://${INSTALLER_IP}/images
   deploy_kernel_url: http://172.22.0.3:6180/images/ironic-python-agent.kernel
   deploy_ramdisk_url: http://172.22.0.3:6180/images/ironic-python-agent.initramfs
   dhcp_range: 172.22.0.10,172.22.0.100
