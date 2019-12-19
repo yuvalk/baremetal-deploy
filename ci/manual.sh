@@ -102,6 +102,7 @@ function teardown {
     rm -fr discardable_run
 }
 
+cd "$(dirname "$0")"
 mkdir discardable_run
 cd discardable_run
 
