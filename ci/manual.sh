@@ -71,7 +71,10 @@ function provision_cluster {
     envsubst < metal3-config.yaml.sample > metal3-config.yaml    
     mv metal3-config.yaml testcluster/openshift/99_metal3-config.yaml
 
+    # set +e for testing purposes, at the moment, installer quite due to timeout but the installation proceed and finish.. need to find what to wait for
+    set +e
     ./openshift-baremetal-install --dir=testcluster --log-level debug create cluster
+    set -e
 }
 
 function run_tests {
