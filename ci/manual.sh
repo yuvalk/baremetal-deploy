@@ -80,9 +80,24 @@ function provision_cluster {
     export KUBECONFIG=`pwd`/testcluster/auth/kubeconfig
 }
 
+function deploy_cnf {
+    echo 4. deploy cnf
     # label workers
     ./oc label node/master-1.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
     ./oc label node/master-2.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
+
+    pushd `pwd`
+    cd ../../features
+    . hack/test_env.sh
+    . hack/common.sh
+
+    make deploy
+
+    popd
+}
+
+function run_tests {
+    echo 5. run the tests
 }
 
 function collect_results {
@@ -107,6 +122,7 @@ cd discardable_run
 retrieve_ocp43
 ipmi_shutdown
 provision_cluster
+deploy_cnf
 run_tests
 collect_results
 
