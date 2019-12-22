@@ -71,14 +71,14 @@ function provision_cluster {
 
     mv metal3-config.yaml testcluster/openshift/99_metal3-config.yaml
 
-    # set +e for testing purposes, at the moment, installer quite due to timeout but the installation proceed and finish.. need to find what to wait for
     set +e
     ./openshift-baremetal-install --dir=testcluster --log-level debug create cluster
     set -e
-}
+    ./openshift-baremetal-install --dir=testcluster --log-level debug wait-for bootstrap-complete
+    ./openshift-baremetal-install --dir=testcluster --log-level debug wait-for install-complete
 
-function run_tests {
-    echo 4. clone the repo and run the tests
+    export KUBECONFIG=`pwd`/testcluster/auth/kubeconfig
+}
 
     # label workers
     ./oc label node/master-1.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
