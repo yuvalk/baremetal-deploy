@@ -80,6 +80,16 @@ function provision_cluster {
     export KUBECONFIG=`pwd`/testcluster/auth/kubeconfig
 }
 
+function configure_cluster {
+	# This is specialized configuration for the test env.
+	# in our case, 1 master
+	
+	# disable CVO
+	oc scale --replicas 0 -n openshift-cluster-version deployments/cluster-version-operator
+	# keep only a single etcd-quorum-guard
+	oc scale --replicas 1 -n openshift-machine-config-operator deployments/etcd-quorum-guard
+}
+
 function deploy_cnf {
     echo 4. deploy cnf
     # label workers
@@ -96,8 +106,14 @@ function deploy_cnf {
     popd
 }
 
-function run_tests {
+function run_ose_tests {
     echo 5. run the tests
+    git clone https://github.com/openshift/origin
+    pushd `pwd`
+    cd origin
+    make build WHAT=cmd/openshift-tests
+    _output/local/bin/linux/amd64/openshift-tests run conformance/serial --dry-run | grep -v -E "API data in etcd|Managed cluster should grow" | _output/local/bin/linux/amd64/openshift-tests run -f -
+    popd
 }
 
 function collect_results {
@@ -122,7 +138,10 @@ cd discardable_run
 retrieve_ocp43
 ipmi_shutdown
 provision_cluster
+configure_cluster
+run_ose_tests
 deploy_cnf
+run_ose_tests
 run_tests
 collect_results
 
