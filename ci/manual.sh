@@ -89,6 +89,16 @@ function configure_cluster {
 	./oc scale --replicas 1 -n openshift-machine-config-operator deployments/etcd-quorum-guard
 }
 
+function configure_art() {
+	if [ -z ${ART_FILE+x} ]; then
+		echo "[WARN] art key does not exist, skipping it"
+	else
+		export ART_KEY=$(<$ART_FILE)
+		envsubst < ../art-repo.yaml.template > art-repo.yaml
+		./oc apply -f art-repo.yaml
+	fi
+}
+
 function deploy_cnf {
     echo 4. deploy cnf
     # label workers
@@ -138,6 +148,7 @@ retrieve_ocp43
 ipmi_shutdown
 provision_cluster
 configure_cluster
+configure_art
 run_ose_tests
 deploy_cnf
 run_ose_tests
