@@ -71,13 +71,12 @@ function provision_cluster {
 
     mv metal3-config.yaml testcluster/openshift/99_metal3-config.yaml
 
-    set +e
-    ./openshift-baremetal-install --dir=testcluster --log-level debug create cluster
-    set -e
+    ./openshift-baremetal-install --dir=testcluster --log-level debug create cluster || :
     ./openshift-baremetal-install --dir=testcluster --log-level debug wait-for bootstrap-complete
     ./openshift-baremetal-install --dir=testcluster --log-level debug wait-for install-complete
 
     export KUBECONFIG=`pwd`/testcluster/auth/kubeconfig
+    ./oc version > version.txt
 }
 
 function configure_cluster {
