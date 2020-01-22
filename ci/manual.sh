@@ -84,9 +84,9 @@ function configure_cluster {
 	# in our case, 1 master
 	
 	# disable CVO
-	oc scale --replicas 0 -n openshift-cluster-version deployments/cluster-version-operator
+	./oc scale --replicas 0 -n openshift-cluster-version deployments/cluster-version-operator
 	# keep only a single etcd-quorum-guard
-	oc scale --replicas 1 -n openshift-machine-config-operator deployments/etcd-quorum-guard
+	./oc scale --replicas 1 -n openshift-machine-config-operator deployments/etcd-quorum-guard
 }
 
 function deploy_cnf {
