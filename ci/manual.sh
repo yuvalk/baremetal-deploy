@@ -102,8 +102,8 @@ function configure_art() {
 function deploy_cnf {
     echo 4. deploy cnf
     # label workers
-    ./oc label node/master-1.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
-    ./oc label node/master-2.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
+    ./oc label --overwrite node/master-1.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
+    ./oc label --overwrite node/master-2.fci1.kni.lab.eng.bos.redhat.com node-role.kubernetes.io/worker-rt=""
 
     pushd `pwd`
     cd ../../features
